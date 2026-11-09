@@ -1,5 +1,6 @@
 {
   "name": "heycai-skills",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -7,6 +8,8 @@
   },
   "scripts": {
     "test": "node --test \"tests/**/*.test.mjs\"",
-    "build": "node scripts/build-wellknown.mjs"
+    "build": "node scripts/build-wellknown.mjs",
+    "manifests": "node scripts/manifests.mjs",
+    "package": "node scripts/package-plugin.mjs"
   }
 }

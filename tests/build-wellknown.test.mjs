@@ -6,7 +6,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { buildIndex, isEntryPoint, writeWellKnown } from '../scripts/build-wellknown.mjs';
+import { buildIndex, isEntryPoint, WELL_KNOWN_TREES, writeAllWellKnown, writeWellKnown } from '../scripts/build-wellknown.mjs';
 
 const SCHEMA = 'https://schemas.agentskills.io/discovery/0.2.0/schema.json';
 const DESCRIPTION = 'Demo skill for the catalog tests. Use when testing the builder.';
@@ -132,4 +132,66 @@ test('running the build script writes the catalog next to its skills folder', (t
   assert.match(output, /Wrote 1 skill\(s\)/);
   const index = JSON.parse(fs.readFileSync(path.join(root, 'dist', '.well-known', 'agent-skills', 'index.json'), 'utf8'));
   assert.deepEqual(index.skills.map((s) => s.name), ['demo-skill']);
+  const legacy = JSON.parse(fs.readFileSync(path.join(root, 'dist', '.well-known', 'skills', 'index.json'), 'utf8'));
+  assert.deepEqual(legacy.skills.map((s) => s.url), ['/.well-known/skills/demo-skill/SKILL.md']);
+  assert.equal(
+    fs.readFileSync(path.join(root, 'dist', '.well-known', 'skills', 'demo-skill', 'SKILL.md'), 'utf8'),
+    demoSkill('demo-skill'),
+  );
+});
+
+// --- The legacy /.well-known/skills/ tree that Hermes' well-known source reads -----------------------------
+
+test('the two trees are /.well-known/agent-skills and the legacy /.well-known/skills', () => {
+  assert.deepEqual(WELL_KNOWN_TREES, [
+    { dir: 'agent-skills', urlPrefix: '/.well-known/agent-skills' },
+    { dir: 'skills', urlPrefix: '/.well-known/skills' },
+  ]);
+});
+
+test('buildIndex points every url inside the URL prefix it is given', (t) => {
+  const dir = makeSkillsDir({ 'demo-skill': demoSkill('demo-skill') });
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  const { index } = buildIndex(dir, '/.well-known/skills');
+
+  assert.equal(index.skills[0].url, '/.well-known/skills/demo-skill/SKILL.md');
+  assert.deepEqual(buildIndex(dir).index.skills[0].url, '/.well-known/agent-skills/demo-skill/SKILL.md');
+});
+
+test('writeAllWellKnown writes both trees: same SKILL.md bytes, same index apart from the url prefix', (t) => {
+  const skillsDir = makeSkillsDir({ 'zeta-skill': demoSkill('zeta-skill'), 'alpha-skill': demoSkill('alpha-skill') });
+  const outRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'heycai-skills-wk-'));
+  t.after(() => {
+    fs.rmSync(skillsDir, { recursive: true, force: true });
+    fs.rmSync(outRoot, { recursive: true, force: true });
+  });
+
+  const indexes = writeAllWellKnown(skillsDir, outRoot);
+
+  assert.equal(indexes.length, 2);
+  const read = (tree, file) => fs.readFileSync(path.join(outRoot, tree, file));
+  for (const name of ['alpha-skill', 'zeta-skill']) {
+    assert.ok(read('skills', `${name}/SKILL.md`).equals(read('agent-skills', `${name}/SKILL.md`)), name);
+  }
+  const current = JSON.parse(read('agent-skills', 'index.json'));
+  const legacy = JSON.parse(read('skills', 'index.json'));
+  const moved = current.skills.map((s) => ({ ...s, url: s.url.replace('/.well-known/agent-skills/', '/.well-known/skills/') }));
+  assert.deepEqual(legacy, { ...current, skills: moved });
+});
+
+test('the real skills: the legacy tree matches the agent-skills tree and the source byte for byte', (t) => {
+  const skillsDir = path.join(SCRIPTS_DIR, '..', 'skills');
+  const outRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'heycai-skills-real-'));
+  t.after(() => fs.rmSync(outRoot, { recursive: true, force: true }));
+
+  writeAllWellKnown(skillsDir, outRoot);
+
+  const names = JSON.parse(fs.readFileSync(path.join(outRoot, 'skills', 'index.json'), 'utf8')).skills.map((s) => s.name);
+  assert.deepEqual(names, ['clinic-front-desk-audit', 'clinic-website-ai-search']);
+  for (const name of names) {
+    const source = fs.readFileSync(path.join(skillsDir, name, 'SKILL.md'));
+    assert.ok(fs.readFileSync(path.join(outRoot, 'agent-skills', name, 'SKILL.md')).equals(source), `agent-skills ${name}`);
+    assert.ok(fs.readFileSync(path.join(outRoot, 'skills', name, 'SKILL.md')).equals(source), `skills ${name}`);
+  }
 });

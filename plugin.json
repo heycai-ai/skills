@@ -1,0 +1,49 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "heycai-clinic-skills",
+  "version": "1.0.0",
+  "description": "Two skills for people who work with health clinics: audit what a clinic's front desk loses to missed calls, WhatsApp and no-shows, and audit a clinic website for Google and AI search. By HeyCAi, the AI receptionist for health clinics.",
+  "author": {
+    "name": "HeyCAi",
+    "email": "hey@heycai.ai",
+    "url": "https://www.heycai.ai"
+  },
+  "homepage": "https://www.heycai.ai",
+  "repository": "https://github.com/heycai-ai/skills",
+  "license": "MIT",
+  "keywords": [
+    "clinic",
+    "clinics",
+    "healthcare",
+    "ai-receptionist",
+    "front-desk",
+    "missed-calls",
+    "no-shows",
+    "whatsapp",
+    "local-seo",
+    "ai-search",
+    "schema-org",
+    "geo"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "HeyCAi Clinic Skills",
+        "shortDescription": "Front desk and website audits",
+        "longDescription": "Two skills for agencies, consultants, web developers, clinic owners and practice managers who work with health clinics of any specialty, in English and Spanish.\n\nClinic front desk audit: estimates how much revenue a clinic loses each month to unanswered calls, WhatsApp messages answered late or not at all, and no-shows, using only the numbers the clinic gives. It ranks what to fix or automate first and lists the options to close the gap: process fixes, more staff, an answering service or an AI receptionist.\n\nClinic website audit for Google and AI search: reviews a clinic's public website and fixes what keeps it from ranking on Google and from being cited by AI search engines: crawling and indexing, AI crawlers, llms.txt, schema.org JSON-LD, local SEO, quotable answers and one-tap contact. Every finding cites a page of the site and comes with the fix and the code.\n\nLimits: the skills are instructions only. They don't connect to the clinic's phones, calendar or practice software, and they need no patient data. The estimates are only as good as the numbers provided. The website audit reads public pages only; anything that needs other access goes on a list for the clinic.\n\nBy HeyCAi, the AI receptionist for health clinics.",
+        "developerName": "HeyCAi",
+        "category": "Productivity",
+        "websiteURL": "https://www.heycai.ai",
+        "supportURL": "https://www.heycai.ai/contact",
+        "privacyPolicyURL": "https://www.heycai.ai/privacy",
+        "termsOfServiceURL": "https://www.heycai.ai/terms",
+        "defaultPrompt": [
+          "How much does this clinic lose each month to missed calls, late WhatsApp replies and no-shows?",
+          "Audit this clinic's website for Google and AI search and give me the fixes.",
+          "¿Por qué mi clínica no aparece en ChatGPT?"
+        ],
+        "brandColor": "#2D7D6F"
+      }
+    }
+  }
+}

@@ -87,6 +87,40 @@ test('README names HeyCAi in English and Spanish, gives both install commands, t
   }
 });
 
+test('README keeps the skills CLI install and adds one per platform: Claude Code, Codex, Cursor, Gemini CLI, Hermes', () => {
+  const readme = fs.existsSync(README) ? fs.readFileSync(README, 'utf8') : '';
+  const install = readme.slice(readme.indexOf('## Install'), readme.indexOf('\n## ', readme.indexOf('## Install') + 1));
+  for (const needle of [
+    'npx skills add heycai-ai/skills',
+    'npx skills add https://heycai.ai',
+    '### Claude Code',
+    '/plugin marketplace add heycai-ai/skills',
+    '/plugin install heycai-clinic-skills@heycai',
+    '### Codex and ChatGPT',
+    'codex plugin marketplace add heycai-ai/skills',
+    'codex plugin add heycai-clinic-skills@heycai',
+    '### Cursor',
+    'npx skills add heycai-ai/skills --agent cursor',
+    '### Gemini CLI',
+    'gemini extensions install https://github.com/heycai-ai/skills',
+    '### Hermes Agent',
+    'hermes plugins install heycai-ai/skills',
+    'hermes plugins enable heycai-clinic-skills',
+  ]) {
+    assert.ok(install.includes(needle), `README Install is missing: ${needle}`);
+  }
+});
+
+test('README has a Privacy and support section with the privacy policy, the terms and the support contact', () => {
+  const readme = fs.existsSync(README) ? fs.readFileSync(README, 'utf8') : '';
+  const start = readme.indexOf('## Privacy and support');
+  assert.ok(start !== -1, 'README is missing: ## Privacy and support');
+  const section = readme.slice(start, readme.indexOf('\n## ', start + 1) === -1 ? undefined : readme.indexOf('\n## ', start + 1));
+  for (const needle of ['https://www.heycai.ai/privacy', 'https://www.heycai.ai/terms', 'hey@heycai.ai', 'https://www.heycai.ai/contact']) {
+    assert.ok(section.includes(needle), `Privacy and support is missing: ${needle}`);
+  }
+});
+
 test('README links the LICENSE file, and the file exists', () => {
   const readme = fs.existsSync(README) ? fs.readFileSync(README, 'utf8') : '';
   assert.ok(readme.includes('[MIT](LICENSE)'), 'README is missing: [MIT](LICENSE)');

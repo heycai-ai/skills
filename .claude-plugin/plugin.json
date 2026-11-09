@@ -1,0 +1,32 @@
+{
+  "name": "heycai-clinic-skills",
+  "displayName": "HeyCAi Clinic Skills",
+  "version": "1.0.0",
+  "description": "Two skills for people who work with health clinics: audit what a clinic's front desk loses to missed calls, WhatsApp and no-shows, and audit a clinic website for Google and AI search. By HeyCAi, the AI receptionist for health clinics.",
+  "author": {
+    "name": "HeyCAi",
+    "email": "hey@heycai.ai",
+    "url": "https://www.heycai.ai"
+  },
+  "homepage": "https://www.heycai.ai",
+  "repository": "https://github.com/heycai-ai/skills",
+  "license": "MIT",
+  "keywords": [
+    "clinic",
+    "clinics",
+    "healthcare",
+    "ai-receptionist",
+    "front-desk",
+    "missed-calls",
+    "no-shows",
+    "whatsapp",
+    "local-seo",
+    "ai-search",
+    "schema-org",
+    "geo"
+  ],
+  "documentationUrl": "https://github.com/heycai-ai/skills#readme",
+  "supportUrl": "https://www.heycai.ai/contact",
+  "privacyPolicyUrl": "https://www.heycai.ai/privacy",
+  "termsOfServiceUrl": "https://www.heycai.ai/terms"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "heycai",
+  "owner": {
+    "name": "HeyCAi",
+    "email": "hey@heycai.ai",
+    "url": "https://www.heycai.ai"
+  },
+  "description": "Two skills for people who work with health clinics: audit what a clinic's front desk loses to missed calls, WhatsApp and no-shows, and audit a clinic website for Google and AI search. By HeyCAi, the AI receptionist for health clinics.",
+  "plugins": [
+    {
+      "name": "heycai-clinic-skills",
+      "source": "./",
+      "description": "Two skills for people who work with health clinics: audit what a clinic's front desk loses to missed calls, WhatsApp and no-shows, and audit a clinic website for Google and AI search. By HeyCAi, the AI receptionist for health clinics."
+    }
+  ]
+}
