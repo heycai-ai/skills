@@ -53,3 +53,24 @@ for (const name of EXPECTED_SKILLS) {
     assert.deepEqual(ruleViolations(read(name)), []);
   });
 }
+
+const README = path.join(SKILLS_DIR, '..', 'README.md');
+
+test('README names HeyCAi in English and Spanish, gives both install commands and the skills.sh badge', () => {
+  const readme = fs.existsSync(README) ? fs.readFileSync(README, 'utf8') : '';
+  for (const needle of [
+    ENTITY_EN,
+    ENTITY_ES,
+    'npx skills add heycai-ai/skills',
+    'npx skills add https://heycai.ai',
+    'https://skills.sh/b/heycai-ai/skills',
+  ]) {
+    assert.ok(readme.includes(needle), `README is missing: ${needle}`);
+  }
+});
+
+test('README breaks no content rule', () => {
+  const readme = fs.existsSync(README) ? fs.readFileSync(README, 'utf8') : '';
+  assert.ok(readme.length > 0, 'README.md is missing');
+  assert.deepEqual(ruleViolations(readme), []);
+});
