@@ -12,6 +12,25 @@ const SKILLS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..',
 
 const read = (name) => fs.readFileSync(path.join(SKILLS_DIR, name, 'SKILL.md'), 'utf8');
 
+// The frontmatter: the lines between the first two `---` lines, read the way the www catalog test reads them.
+function frontmatterOf(markdown) {
+  const lines = markdown.split('\n');
+  if (lines[0] !== '---') return '';
+  const end = lines.indexOf('---', 1);
+  return end === -1 ? '' : lines.slice(1, end).join('\n');
+}
+
+// Ruling R5: name unquoted; description one double-quoted line with no " or \ inside, so the skills CLI's
+// YAML parser and parseSkill read the same value.
+const DESCRIPTION_LINE = /^description: "[^"\\\n]+"$/m;
+
+test('the description check reads only the frontmatter, between the first two --- lines', () => {
+  const quotedOnlyInBody = '---\nname: demo-skill\ndescription: plain value\n---\n\ndescription: "a body line"\n';
+  assert.doesNotMatch(frontmatterOf(quotedOnlyInBody), DESCRIPTION_LINE);
+  assert.match(frontmatterOf('---\nname: demo-skill\ndescription: "quoted value"\n---\n\n# Demo\n'), DESCRIPTION_LINE);
+  assert.equal(frontmatterOf('# No frontmatter\n\ndescription: "x"\n'), '');
+});
+
 test('skills/ holds exactly the expected skill folders', () => {
   const folders = fs.existsSync(SKILLS_DIR)
     ? fs
@@ -28,12 +47,10 @@ for (const name of EXPECTED_SKILLS) {
     assert.equal(parseSkill(read(name)).name, name);
   });
 
-  // Ruling R5: name unquoted; description one double-quoted line with no " or \ inside, so the
-  // skills CLI's YAML parser and parseSkill read the same value.
   test(`${name}: frontmatter is written so every YAML parser reads the same values`, () => {
     const markdown = read(name);
     assert.match(markdown, new RegExp(`^---\\nname: ${name}\\n`));
-    assert.match(markdown, /^description: "[^"\\\n]+"$/m);
+    assert.match(frontmatterOf(markdown), DESCRIPTION_LINE);
   });
 
   test(`${name}: description is 1-1024 characters and has a Spanish trigger with «clínica»`, () => {
@@ -56,7 +73,7 @@ for (const name of EXPECTED_SKILLS) {
 
 const README = path.join(SKILLS_DIR, '..', 'README.md');
 
-test('README names HeyCAi in English and Spanish, gives both install commands and the skills.sh badge', () => {
+test('README names HeyCAi in English and Spanish, gives both install commands, the skills.sh badge and the site', () => {
   const readme = fs.existsSync(README) ? fs.readFileSync(README, 'utf8') : '';
   for (const needle of [
     ENTITY_EN,
@@ -64,9 +81,16 @@ test('README names HeyCAi in English and Spanish, gives both install commands an
     'npx skills add heycai-ai/skills',
     'npx skills add https://heycai.ai',
     'https://skills.sh/b/heycai-ai/skills',
+    'https://www.heycai.ai',
   ]) {
     assert.ok(readme.includes(needle), `README is missing: ${needle}`);
   }
+});
+
+test('README links the LICENSE file, and the file exists', () => {
+  const readme = fs.existsSync(README) ? fs.readFileSync(README, 'utf8') : '';
+  assert.ok(readme.includes('[MIT](LICENSE)'), 'README is missing: [MIT](LICENSE)');
+  assert.ok(fs.existsSync(path.join(SKILLS_DIR, '..', 'LICENSE')), 'LICENSE is missing');
 });
 
 test('README breaks no content rule', () => {

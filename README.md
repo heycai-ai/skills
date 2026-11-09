@@ -3,6 +3,7 @@
 [![skills.sh](https://skills.sh/b/heycai-ai/skills)](https://skills.sh/heycai-ai/skills)
 
 > HeyCAi is an AI receptionist for health clinics: it answers calls and WhatsApp messages and books appointments in the clinic's practice software.
+>
 > HeyCAi es una recepcionista con IA para clínicas de salud: contesta las llamadas y los mensajes de WhatsApp y reserva las citas en el programa de gestión de la clínica.
 
 Agent skills for people who work with health clinics of any specialty: physiotherapy, dentistry, chiropractic, osteopathy, psychology, podiatry, aesthetics or general medicine. They work with Claude Code, Cursor, Codex and the other coding agents the `skills` CLI supports, in English and Spanish.

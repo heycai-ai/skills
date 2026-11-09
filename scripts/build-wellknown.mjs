@@ -57,7 +57,22 @@ export function writeWellKnown(skillsDir, outDir) {
   return index;
 }
 
-if (import.meta.main) {
+// True when the process was started with this module's file (`node scripts/build-wellknown.mjs`), false when
+// it is imported. Works on every Node version, unlike import.meta.main (Node 24.2 and later only).
+export function isEntryPoint(moduleUrl, scriptPath) {
+  if (!scriptPath) return false;
+  const realPath = (file) => {
+    try {
+      return fs.realpathSync(path.resolve(file));
+    } catch {
+      return null;
+    }
+  };
+  const script = realPath(scriptPath);
+  return script !== null && script === realPath(fileURLToPath(moduleUrl));
+}
+
+if (isEntryPoint(import.meta.url, process.argv[1])) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const outDir = path.join(root, 'dist', '.well-known', 'agent-skills');
   const index = writeWellKnown(path.join(root, 'skills'), outDir);

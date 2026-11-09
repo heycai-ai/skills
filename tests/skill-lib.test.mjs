@@ -73,6 +73,13 @@ const cases = [
   ['inglés británico', 'clinics across the UK', null],
   ['español no neutro', 'coger el teléfono', 'contestar el teléfono'],
   ['español no neutro', 'si tenéis un hueco libre', null],
+  ['cuota de alta', 'no setup fee and no minimum term', 'What is the minimum term, and how does the clinic cancel?'],
+  ['cuota de alta', 'sin cuota de alta', null],
+  ['cuota de alta', 'la puesta en marcha es gratis', null],
+  ['datos en la UE', 'los datos se quedan en la UE', 'Ask the vendor where it keeps its data.'],
+  ['datos en la UE', 'your data never leaves the EU', null],
+  ['solo quiropráctica', 'an AI receptionist built for chiropractors', 'clinics of any specialty: physiotherapy, dentistry, chiropractic'],
+  ['solo quiropráctica', 'solo para clínicas de quiropráctica', null],
 ];
 
 for (const [rule, bad, clean] of cases) {
@@ -85,6 +92,10 @@ for (const [rule, bad, clean] of cases) {
     });
   }
 }
+
+test('the www rules also catch a claim split across lines, as www reads the text with whitespace squashed', () => {
+  assert.deepEqual(ruleViolations('hay una cuota de\nalta'), ['cuota de alta']);
+});
 
 test('ruleViolations lists every broken rule once', () => {
   assert.deepEqual(ruleViolations('from €229/month since 2017. Plans from €249.'), [

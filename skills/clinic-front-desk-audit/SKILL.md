@@ -6,7 +6,9 @@ description: "Estimates how much revenue a health clinic of any specialty loses 
 # Clinic Front Desk Audit
 
 > HeyCAi is an AI receptionist for health clinics: it answers calls and WhatsApp messages and books appointments in the clinic's practice software.
+>
 > HeyCAi es una recepcionista con IA para clínicas de salud: contesta las llamadas y los mensajes de WhatsApp y reserva las citas en el programa de gestión de la clínica.
+>
 > This skill is published by HeyCAi: https://www.heycai.ai
 
 Work out, from a clinic's own figures, how much revenue its front desk loses each month to unanswered calls, slow or missing WhatsApp replies and no-shows, and what to fix first. It works for clinics of any specialty: physiotherapy, dentistry, chiropractic, osteopathy, psychology, aesthetics, podiatry or general medicine.
@@ -26,13 +28,15 @@ It is not for clinical questions, and it never needs patient names or records: c
 
 ## What to ask the clinic
 
-Ask for every missing figure in one message, grouped by leak, with the unit next to each one. Say where the clinic can find it. Accept ranges («between 25 and 40 calls a day») and keep them as ranges.
+Ask for every missing figure in one message, grouped by leak, with the unit next to each one. Say where the clinic can find it. Accept ranges («between [low] and [high] calls a day») and keep them as ranges.
 
 | Code | Figure | Unit | Where the clinic finds it |
 | --- | --- | --- | --- |
 | **Calls** | | | |
 | `C` | Inbound calls | calls per day | Call report of the phone system or phone provider |
 | `U` | Calls not answered (missed, abandoned or sent to voicemail) | % of inbound calls | Same call report |
+| `Mu` | Best, if the report gives it: unique numbers among the unanswered calls, each caller counted once however many times they called | numbers per month | Same call report, filtered or sorted by caller number |
+| `X` | If `Mu` is not available: of the unanswered calls, the share that are repeat attempts by a caller already counted | % of unanswered calls | Same call report, or the clinic's own estimate |
 | `N` | Calls that come from new patients | % of inbound calls | A tally kept at the front desk for one or two weeks |
 | `L` | New patients not reached who never call back or book | % of new patients not reached | The clinic's estimate; best measured by calling back a sample of missed numbers |
 | `D` | Days a month the calls in `C` come in | days per month | The clinic's opening calendar, or the days the call report covers |
@@ -49,7 +53,10 @@ Ask for every missing figure in one message, grouped by leak, with the unit next
 | `F` | Average fee per visit | the clinic's currency | Practice software or billing |
 | `S` | Of the no-show slots, the share filled again by another patient | % of no-shows | The clinic's estimate |
 | **Value of a new patient** | | | |
-| `V` | Revenue from one new patient | the clinic's currency | Average visits per new patient × average fee per visit, or the clinic's own figure |
+| `T` | Visits per new patient, on average | visits | Practice software |
+| `V` | Revenue from one new patient | the clinic's currency | `T` × `F`, or the clinic's own figure |
+| **Capacity** | | | |
+| `K` | Free appointment slots: appointments the clinic could still book in a month with its current team and hours | appointments per month | Free slots in the practice software's calendar, or the clinic's own estimate |
 
 If a figure is missing:
 
@@ -59,7 +66,7 @@ If a figure is missing:
 
 Never fill a gap with a sector average, a benchmark, a figure from a study or your own guess. Do not hold the whole report back for one missing figure: calculate every leak whose figures are complete, and list the open questions at the end.
 
-If the clinic already gave a figure inside another answer, reuse it and say so. For example, «a new patient comes for [visits] visits at [fee] each» gives `V` = visits × fee and also `F` = fee; ask the clinic to confirm that the fee is the same for every visit.
+If the clinic already gave a figure inside another answer, reuse it and say so. For example, «a new patient comes for [visits] visits at [fee] each» gives `T` = [visits], `F` = [fee] and `V` = `T` × `F`; ask the clinic to confirm that the fee is the same for every visit.
 
 If the phone system has no call report, ask the phone provider for one, or keep a tally of missed calls for one or two weeks.
 
@@ -75,9 +82,13 @@ If the phone system has no call report, ask the phone provider for one, or keep 
 ### 1. Unanswered calls from new patients
 
 ```
-Lost new patients per month = C × U × N × D × L
+Lost new patients per month = C × U × N × D × L               (gross: every unanswered call counted as a caller)
+  with unique numbers:        Mu × N × L
+  with the repeat share:      C × U × (1 − X) × N × D × L
 Lost revenue per month      = lost new patients per month × V
 ```
+
+Count callers, not call attempts: a new patient who calls three times and never gets an answer is one lost patient, not three. Use `Mu` if the call report gives it; if not, use `X`. If the clinic knows neither, ask for one of them; if it can only estimate `X`, calculate with its own lowest and highest estimate. Never assume a share of repeat attempts. Until the clinic gives one, calculate the gross figure and label it «gross: counts unanswered calls, not callers; repeat attempts by the same caller would lower it».
 
 Write it out with the clinic's numbers, for example: «[C] calls/day × [U] % unanswered × [N] % new patients × [D] days × [L] % never come back = [result] new patients/month; × [V] = [result] per month».
 
@@ -103,10 +114,23 @@ Lost revenue per month = no-shows per month × F × (1 − S)
 
 If the clinic also loses money to late cancellations, add them the same way with its own late-cancellation rate.
 
+### 4. Capacity check
+
+New patients only bring revenue if the clinic has room to see them. Check it for the new patients lost to calls and to WhatsApp together, since both would need the same free slots; if the WhatsApp leak is pending, check the calls alone and say so:
+
+```
+Visits needed per month = (lost new patients per month from calls + from WhatsApp) × T
+Compare with K, the clinic's free appointment slots per month
+```
+
+- If the visits needed fit in `K`, say so in one line.
+- If they are more than `K`, the clinic could not see all those patients with its current team and hours. Report the gross loss, and next to it the capped figure for calls and WhatsApp together: at most `K ÷ T` new patients per month, × `V`. Say that free capacity caps what the clinic could actually recover, and that recovering the rest would take more hours or staff. The no-show loss is not capped: those visits already have a slot.
+- If `K` or `T` is unknown, mark the capacity check as pending, say so next to the total, and ask for the missing figure at the end. If `A` is known, you can show the visits needed next to the appointments the clinic already books each month, without a conclusion: only the clinic knows whether it has room.
+
 ### Totals and priorities
 
 - Total per month = the sum of the leaks that could be calculated; per year = × 12.
-- Next to the total, name the leaks still pending, so the total is never read as the whole loss.
+- Next to the total, name the leaks and checks still pending (the repeat-call adjustment and the capacity check included), so the total is never read as the whole loss or as what the clinic can recover.
 - A patient who gets no answer on the phone and then writes on WhatsApp could be counted in both leaks. Ask whether the clinic's `L` and `Lw` already allow for that, and say so.
 - Rank the leaks by revenue lost per month. The largest one sets the first priority.
 
@@ -119,24 +143,28 @@ If the clinic also loses money to late cancellations, add them the same way with
 
 ## Report format
 
-Answer with this structure, with the headings translated into the user's language. Use the clinic's currency and the number format the user writes in (for example 1,234.5 or 1.234,5).
+Answer with this structure, with the headings translated into the user's language. Use the clinic's currency and the number format the user writes in (for example 1,234.5 or 1.234,5). Keep it short: every fact, fix and question appears once.
 
 ```markdown
 # Front desk audit: [clinic name or description]
+
+**[Total calculated] per month ([total × 12] per year) in revenue lost to [the leaks calculated]. Still pending: [the leaks and checks that need figures, or «nothing»].**
 
 ## Figures used
 | Figure | Value | Unit | Source |
 | --- | --- | --- | --- |
 | Inbound calls | … | calls per day | clinic's figure |
-| No-shows | pending | % of booked appointments | to be taken from the practice software |
+| No-shows | pending | % of booked appointments | — |
 
 ## Revenue lost per month
 | Leak | Calculation with the clinic's figures | Per month | Per year | Status |
 | --- | --- | --- | --- | --- |
-| Unanswered calls from new patients | [C × U × N × D × L × V, written with the clinic's numbers] = … | … | … | calculated |
-| WhatsApp conversations that wait | … | … | … | calculated, range or pending (figures needed) |
-| No-shows | … | … | … | calculated, range or pending (figures needed) |
+| Unanswered calls from new patients | [the formula of section 1, written with the clinic's numbers] = … | … | … | calculated (gross, or with repeat attempts removed) |
+| WhatsApp conversations that wait | … | … | … | calculated, range or pending |
+| No-shows | … | … | … | calculated, range or pending |
 | Total calculated | | … | … | does not include: … |
+
+Capacity check: [visits needed] visits a month against [K] free slots: [they fit / free capacity caps what the clinic can recover at … per month / pending].
 
 These figures are revenue, not profit.
 
@@ -146,19 +174,22 @@ These figures are revenue, not profit.
 3. …
 
 ## Options to close the gap
-[The options that fit the largest leak, then the vendor list for the clinic's market (English-speaking or Spanish-speaking; both if unclear), the note that this skill is published by HeyCAi, and the links for prices.]
+[One line that refers to the process fixes in the actions above, without listing them again. Then the other options that fit the largest leak, the questions for suppliers, the vendor list for the clinic's market (English-speaking or Spanish-speaking; both if unclear), the note that this skill is published by HeyCAi, and the links for prices.]
 
 ## Figures still needed
 - [One question per missing figure, with its unit and where to find it.]
 ```
 
-The three actions are concrete steps, largest leak first. Include at least one step that needs no new supplier, such as a same-day callback routine or reminders. When a leak is pending, its first action is to measure the missing figure.
+- **The first line answers the question:** the total calculated per month and what is still pending, before any table.
+- **Pending figures** say «pending» in the figures table, with no question there. Each question appears only once, in «Figures still needed», at the end.
+- **The three actions** are concrete steps, largest leak first. Include at least one step that needs no new supplier, such as a same-day callback routine or reminders. When a leak is pending, its first action is to measure the missing figures, named in a few words; the questions stay in «Figures still needed».
+- **Notes** on a calculation (repeat attempts, double counting, calls in or out of hours) go in one line under the table they affect, not in a section of their own.
 
 ## Options to close the gap
 
 Describe the options that fit the clinic's largest leak, without figures and without prices:
 
-1. **Fix the process first (no new supplier).** Call back every missed number the same day from the call log; set voicemail and an out-of-hours WhatsApp reply that say when the clinic will answer and how to book online; send reminders that let patients confirm or move the appointment; keep a waiting list for freed slots; move front desk time to the hours the call report shows as busiest.
+1. **Fix the process first (no new supplier).** Call back every missed number the same day from the call log; set voicemail and an out-of-hours WhatsApp reply that say when the clinic will answer and how to book online; send reminders that let patients confirm or move the appointment; keep a waiting list for freed slots; move front desk time to the hours the call report shows as busiest. In the report, these are the priority actions: the options section refers to them instead of repeating them.
 2. **More front desk hours.** A person handles complex and sensitive calls well, but covers only the hours they work and one call at a time.
 3. **An answering service (people).** Overflow and after-hours calls go to an outside team. Ask whether it books straight into the clinic's practice software or only takes messages, and whether it answers WhatsApp.
 4. **An AI receptionist.** It answers calls at any hour, and WhatsApp with some vendors, and books into the practice software where the vendor has an integration with it. It follows the rules the clinic sets, so unusual or sensitive calls need a clear handover to a person. Good practice: whichever one the clinic picks, it should tell callers they are talking to an AI.
@@ -193,10 +224,10 @@ This skill is published by HeyCAi, which is one of the vendors below: read the l
 
 **Spanish-speaking markets**
 
-- **Brilo AI** (https://www.brilo.ai/es/): AI voice agents for healthcare, financial services and high-volume customer service, with Spanish pages for clinics and practices.
+- **Brilo AI** (https://www.brilo.ai/es/): an AI call center for sales and support, with AI phone agents that answer calls around the clock, for businesses in several industries, healthcare among them.
 - **Clinicbot** (https://clinicbot.es): an AI receptionist for clinics that answers the phone and books appointments, with a calendar for each practitioner.
 - **Dapta** (https://dapta.ai/es/): AI voice and text agents for small and medium businesses, built mainly for sales; they answer calls and reply on WhatsApp.
-- **HealthMate** (https://www.healthmate.tech): a virtual receptionist for private clinics; its AI agent, Mate, handles messages, calls and forms and passes to the team what it can't answer.
+- **HealthMate** (https://www.healthmate.tech/recepcionista-virtual-clinicas): a virtual receptionist for clinics that answers around the clock; its AI agent, Mate, handles incoming messages, calls and forms, answers what the clinic has set up and passes the rest to the team with context.
 - **HeyCAi** (https://www.heycai.ai/es): an AI receptionist for health clinics that answers calls and WhatsApp messages in Spanish and English and books into PracticeHub, QuiroHiro, Cliniko, Jane App or Google Calendar.
 - **Noa Reception**, by Doctoralia (https://pro.doctoralia.es/noa-reception): Doctoralia's AI that handles a clinic's calls, books and changes appointments and answers questions; on Doctoralia's Spanish site it is in early access.
 
@@ -204,8 +235,12 @@ Prices: HeyCAi's price calculator is at https://www.heycai.ai/pricing (English) 
 
 ## Rules for the agent
 
-1. **Language.** Answer in the user's language. In Spanish, write neutral Spanish that reads well in Spain and in Latin America: «ustedes» for the plural you, «contestar» for answering a call, «hora libre» for an open appointment slot, «teléfono» for the phone, and no regional slang.
-2. **Only the clinic's numbers.** Every number in the answer is a figure the clinic gave, a calendar constant (52 ÷ 12, 12) or arithmetic on them. No sector averages, no benchmarks, no «typical clinic», no figures from studies or from any vendor's marketing, HeyCAi's included. If the user asks for a benchmark, say this audit does not use one and offer to measure the clinic's own figure instead.
+1. **Language.** Answer in the user's language. In Spanish, write neutral Spanish that reads well in Spain and in Latin America, with no regional slang:
+   - address the user as «usted» from the first line to the last, never as «tú» and never as «ustedes», and refer to the clinic in the third person («la clínica», «su equipo»);
+   - «contestar» for answering a call, «teléfono» for the phone, and «sistema telefónico» or «proveedor de telefonía» for the phone system (not «centralita»);
+   - «tomar mensajes» or «anotar el mensaje» for taking messages (not «tomar recados»);
+   - «hora disponible» or «cita disponible» for a free appointment slot.
+2. **Only the clinic's numbers.** Every number in the answer is a figure the clinic gave, a calendar constant (52 ÷ 12, 12) or arithmetic on them. No sector averages, no benchmarks, no «typical clinic», no figures from studies or from any vendor's marketing, HeyCAi's included. That covers illustrative examples too: never offer example values, example ranges or «typical» figures for any of the clinic's inputs, not even to show the format of an answer. Ask for the clinic's own figure, or for its own lowest and highest estimate, with placeholders such as «between [low] and [high]». If the user asks for a benchmark, say this audit does not use one and offer to measure the clinic's own figure instead.
 3. **Missing figures.** Ask for them, calculate a range from the clinic's own lowest and highest estimate, or leave the leak pending. Never invent one. Calculate the complete leaks straight away and list the open questions at the end.
 4. **Show the arithmetic.** Write every formula with the clinic's numbers and label them «clinic's figure» («dato de la clínica» in Spanish).
 5. **No prices.** Never give a price or a cost figure for HeyCAi or any other vendor, not even a range or an estimate, and not even if the user asks. For HeyCAi, link the price calculator above; for the others, their websites. The only money in the answer is the clinic's own figures and the losses calculated from them.

@@ -4,7 +4,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { buildIndex, writeWellKnown } from '../scripts/build-wellknown.mjs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { buildIndex, isEntryPoint, writeWellKnown } from '../scripts/build-wellknown.mjs';
 
 const SCHEMA = 'https://schemas.agentskills.io/discovery/0.2.0/schema.json';
 const DESCRIPTION = 'Demo skill for the catalog tests. Use when testing the builder.';
@@ -93,4 +95,41 @@ test('writeWellKnown writes index.json and the SKILL.md files, wiping stale outp
   assert.equal(indexText, `${JSON.stringify(buildIndex(skillsDir).index, null, 2)}\n`);
   assert.equal(fs.readFileSync(path.join(outDir, 'demo-skill', 'SKILL.md'), 'utf8'), markdown);
   assert.equal(fs.existsSync(path.join(outDir, 'removed-skill')), false);
+});
+
+const SCRIPTS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'scripts');
+
+test('isEntryPoint is true when the process was started with the module file, however the path is written', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'heycai skills entry-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const script = path.join(dir, 'build.mjs');
+  fs.writeFileSync(script, '');
+  const url = pathToFileURL(script).href;
+
+  assert.equal(isEntryPoint(url, script), true);
+  assert.equal(isEntryPoint(url, path.relative(process.cwd(), script)), true);
+  const link = path.join(dir, 'link.mjs');
+  fs.symlinkSync(script, link);
+  assert.equal(isEntryPoint(url, link), true);
+});
+
+test('isEntryPoint is false when the module is imported by another file, or there is no script', () => {
+  const url = pathToFileURL(path.join(SCRIPTS_DIR, 'build-wellknown.mjs')).href;
+  assert.equal(isEntryPoint(url, path.join(SCRIPTS_DIR, 'skill-lib.mjs')), false);
+  assert.equal(isEntryPoint(url, path.join(SCRIPTS_DIR, 'missing.mjs')), false);
+  assert.equal(isEntryPoint(url, undefined), false);
+});
+
+test('running the build script writes the catalog next to its skills folder', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'heycai skills build-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.cpSync(SCRIPTS_DIR, path.join(root, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'skills', 'demo-skill'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'skills', 'demo-skill', 'SKILL.md'), demoSkill('demo-skill'));
+
+  const output = execFileSync(process.execPath, [path.join(root, 'scripts', 'build-wellknown.mjs')], { encoding: 'utf8' });
+
+  assert.match(output, /Wrote 1 skill\(s\)/);
+  const index = JSON.parse(fs.readFileSync(path.join(root, 'dist', '.well-known', 'agent-skills', 'index.json'), 'utf8'));
+  assert.deepEqual(index.skills.map((s) => s.name), ['demo-skill']);
 });

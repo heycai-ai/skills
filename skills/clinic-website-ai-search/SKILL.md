@@ -6,7 +6,9 @@ description: "Audits the website of a health clinic of any specialty and fixes w
 # Clinic Website AI Search
 
 > HeyCAi is an AI receptionist for health clinics: it answers calls and WhatsApp messages and books appointments in the clinic's practice software.
+>
 > HeyCAi es una recepcionista con IA para clínicas de salud: contesta las llamadas y los mensajes de WhatsApp y reserva las citas en el programa de gestión de la clínica.
+>
 > This skill is published by HeyCAi: https://www.heycai.ai
 
 Audit a clinic's website and fix what stops it from ranking on Google and from being read, understood and cited by AI search engines: ChatGPT, Perplexity, Gemini, Google AI Overviews, Microsoft Copilot and Claude. The checks use the site's public pages; anything that needs other access goes on a list for the clinic. Every finding comes with the page that shows it and the fix, with code where it helps. It works for clinics of any specialty: physiotherapy, dentistry, chiropractic, osteopathy, psychology, podiatry, aesthetics or general medicine.
@@ -46,7 +48,7 @@ Google says that to be shown as a supporting link in AI Overviews or AI Mode, a 
 
 - **One address per page.** `http://` and `https://`, with and without `www`, with and without a trailing slash: every variant ends on the same URL after one permanent redirect (301 or 308), and that URL returns 200. Check the home page and one inner page with `curl -sIL`. Fix: one redirect per variant, straight to the final URL.
 - **Real 404s.** A made-up URL on the site returns a 404 status, not a 200 page or a redirect to the home page.
-- **No `noindex` or snippet limits where they hurt.** Pages that should be found have no `noindex`, `nosnippet` or `max-snippet:0` in `<meta name="robots">` or in an `X-Robots-Tag` header. Check the reverse too: copies that should not be found, such as a staging or preview host or an old domain, are redirected or `noindex` (more in section 6).
+- **No `noindex` or snippet limits where they hurt.** Pages that should be found have no `noindex`, `nosnippet` or `max-snippet:0` in `<meta name="robots">` or in an `X-Robots-Tag` header. Check the reverse too: copies that should not be found, such as a staging or preview host or an old domain, are redirected or `noindex` (more in section 6). For Copilot, also look for `noarchive` and `nocache` in a `robots` or `bingbot` meta tag or header: Microsoft says a `noarchive` page is not linked in Chat and Copilot, a `nocache` page shows only its URL, title and snippet there, and both limit training of Microsoft's models (https://www.bing.com/webmasters/help/robots-meta-tags-and-attributes-that-bing-supports-5198d240). One left over from the days of cached pages is a finding; one the clinic chose stays. Microsoft has announced that from February 1, 2027 separate AI Grounding and AI Training preferences, such as `ai-grounding:disallow` in a `Bingbot` meta tag or `X-Robots-Tag` header, replace `noarchive` and `nocache` for those uses, with transition steps for sites that use the old tags on purpose (https://www.bing.com/webmasters/help/new-ai-preferences-2t1cc16d); report those values the same way.
 - **Canonical.** Each page has a `<link rel="canonical">` with its own absolute URL, not the home page and not another domain.
 - **Sitemap.** It exists, robots.txt names it, and it lists every service, location and article page at its final URL, with no redirects and no `noindex` pages. If it has `lastmod`, the date changes only when the page changes.
 - **Content in the HTML.** The clinic's name, address, phone, the main text, the menu links and the JSON-LD are in the raw HTML, not only after JavaScript runs. Google renders JavaScript, but its own guide says server-side rendering or pre-rendering "is still a great idea" because "not all bots can run JavaScript" (https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics). Fix: server-side rendering, static generation or pre-rendering for every public page.
@@ -57,40 +59,43 @@ Google says that to be shown as a supporting link in AI Overviews or AI Mode, a 
 
 ### 2. AI crawlers: robots.txt and llms.txt
 
-These are the crawlers each engine documents. The second column is the crawler that decides whether the site can be found and cited, so the site must not block it; the third is a separate control.
+These are the crawlers and controls each engine documents. The second column is what lets the engine find and cite the site: blocking it keeps the site out of that engine. The third is a separate control.
 
-| Engine | Crawler that decides whether the site appears | Separate control |
+| Engine | What lets the site be found and cited | Separate control |
 | --- | --- | --- |
 | ChatGPT search | `OAI-SearchBot` | `GPTBot`: training of OpenAI's models |
 | Claude | `Claude-SearchBot` | `ClaudeBot`: training of Anthropic's models |
 | Perplexity | `PerplexityBot` | None: Perplexity says PerplexityBot is not used to crawl content for AI foundation models |
 | Google Search, AI Overviews and AI Mode | `Googlebot` | `Google-Extended`: training of Gemini models and grounding in Gemini Apps and Vertex AI; Google says it does not affect inclusion or ranking in Google Search |
-| Microsoft Copilot | `bingbot` | — |
+| Gemini app | `Googlebot`, and no `Disallow` for `Google-Extended`: Google uses Google-Extended for grounding in Gemini Apps, that is, giving the model content from the Google Search index when it answers | The same `Google-Extended` token also controls training of Gemini models: one choice covers both |
+| Microsoft Copilot | `bingbot` | Page-level tags, not robots.txt: `noarchive` (not linked in Copilot) and `nocache` (only URL, title and snippet), which also limit training of Microsoft's models; from February 1, 2027, Microsoft's `ai-grounding` and `ai-training` preferences replace them (section 1) |
 
-Sources: OpenAI https://developers.openai.com/api/docs/bots · Anthropic https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler · Perplexity https://docs.perplexity.ai/docs/resources/perplexity-crawlers · Google https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers · Microsoft https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a
+Sources: OpenAI https://developers.openai.com/api/docs/bots · Anthropic https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler · Perplexity https://docs.perplexity.ai/docs/resources/perplexity-crawlers · Google https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers · Microsoft https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a and https://www.bing.com/webmasters/help/robots-meta-tags-and-attributes-that-bing-supports-5198d240
 
 - **No accidental block.** None of the crawlers in the second column is disallowed, by name or through `User-agent: *` with `Disallow: /` (a common leftover from a staging site).
-- **Fetchers that act for a user.** `ChatGPT-User`, `Claude-User` and `Perplexity-User` fetch a page when a person asks about it; they don't decide whether the site appears. OpenAI says robots.txt rules "may not apply" to ChatGPT-User and that it "is not used to determine whether content may appear in Search"; Perplexity says Perplexity-User "generally ignores robots.txt rules", so a `Disallow` for these two is advisory at most. Anthropic says Claude-User does follow robots.txt and that disabling it "may reduce your site's visibility for user-directed web search", so don't disallow `Claude-User` either.
+- **Fetchers that act for a user.** `ChatGPT-User`, `Claude-User` and `Perplexity-User` fetch a page when a person asks about it; they don't decide whether the site is in the engine's search index. OpenAI says robots.txt rules "may not apply" to ChatGPT-User and that it "is not used to determine whether content may appear in Search"; Perplexity says Perplexity-User "generally ignores robots.txt rules", so a `Disallow` for these two is advisory at most. Anthropic says Claude-User does follow robots.txt and that disabling it "may reduce your site's visibility for user-directed web search", so don't disallow `Claude-User` either.
 - **Named groups repeat the rules.** A crawler that finds a group with its own name follows that group only. Google says groups for a specific user agent and the `*` group "are not combined" (https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec), and Anthropic says that when robots.txt names ClaudeBot it follows that rule "even if your general setting says something different". So every named group must repeat each `Disallow` it needs, such as an admin area.
-- **Training is the clinic's decision.** Disallowing `GPTBot`, `ClaudeBot` or `Google-Extended` is a choice about model training (and, for `Google-Extended`, about grounding in Gemini Apps); it does not remove the site from ChatGPT search, Claude or Google Search. Explain this and leave those lines as the clinic wants them.
+- **Training is the clinic's decision.** Disallowing `GPTBot` or `ClaudeBot` is a choice about model training; it does not remove the site from ChatGPT search or Claude. Explain this and leave those lines as the clinic wants them.
+- **`Google-Extended` also decides Gemini answers.** Google uses the one token for training of Gemini models and for grounding in Gemini Apps, so disallowing `Google-Extended` also keeps the site's content out of the answers of the Gemini app; it does not affect Google Search, AI Overviews or AI Mode. If the site disallows it, report it as a finding that names both effects, and let the clinic decide: it may be a deliberate choice about training.
 - **Blocks outside robots.txt.** A firewall, CDN or hosting setting that blocks bots can turn these crawlers away even when robots.txt allows them; Google's AI features page lists "Ensuring that crawling is allowed in robots.txt, and by any CDN or hosting infrastructure" among its best practices. If your own requests get a 403 or a challenge page, report that you could not read the page, not that crawlers are blocked, and tell the developer to check the bot settings and the server logs for the user agents above.
 - **robots.txt is not privacy.** A patient area, an admin panel or a booking back office needs a login. A `Disallow` line only asks crawlers not to visit, and Microsoft notes that "robots.txt controls crawl access, not indexing".
 - **llms.txt, low priority.** It is a proposal (https://llmstxt.org), not something the engines above document as an input for ranking or citations. If the site has one, check that it follows the proposal (an H1 with the clinic's name, the only required part; a short summary in a blockquote; H2 sections with lists of links) and that every fact in it matches the pages: old hours, phone numbers or prices in llms.txt are a data conflict (section 6). If it has none, suggest one as a Low finding.
 
-A robots.txt that asks every crawler to stay out of a private path:
+A robots.txt for a clinic that has chosen to keep its pages out of the training of OpenAI's models, while every crawler stays out of a private path. Write it only if the clinic asks for it; the name and the path are examples:
 
 ```text
+# Every crawler without a group of its own, search crawlers included
+# (OAI-SearchBot, Claude-SearchBot, Claude-User, PerplexityBot, Googlebot, bingbot),
+# follows this group: it can read the site, except the private path.
 User-agent: *
 Disallow: /[private path]/
 
-# These crawlers have their own group, so the private path is repeated here.
-# Training crawlers (GPTBot, ClaudeBot, Google-Extended) follow the * group unless the clinic adds a group for them.
-# ChatGPT-User and Perplexity-User act for a user and may ignore robots.txt, so they are not listed.
-User-agent: OAI-SearchBot
-User-agent: Claude-SearchBot
-User-agent: Claude-User
-User-agent: PerplexityBot
-Disallow: /[private path]/
+# The clinic's choice: no training of OpenAI's models on its pages.
+# GPTBot follows this group only. Disallow: / already covers the private path;
+# a group that disallows less must repeat Disallow: /[private path]/ as well.
+# This does not affect ChatGPT search, which uses OAI-SearchBot.
+User-agent: GPTBot
+Disallow: /
 
 Sitemap: https://[clinic domain]/sitemap.xml
 ```
@@ -128,9 +133,9 @@ An llms.txt built only from what the pages say:
 | Gynecology | `https://schema.org/Gynecologic` | `Gynecologic` |
 | Family medicine | `https://schema.org/PrimaryCare` | `PrimaryCare` |
 | Speech therapy | `https://schema.org/SpeechPathology` | None |
-| Chiropractic, osteopathy, psychology, aesthetics | None | None |
+| Chiropractic, osteopathy, psychology, aesthetics | None (but see `Musculoskeletal` below) | None |
 
-schema.org has no clinic type and no `medicalSpecialty` value named after chiropractic, osteopathy or psychology. `Chiropractic` and `Osteopathic` exist only as `MedicineSystem` values, which describe a medical entity such as a therapy, not the clinic. For these clinics use `MedicalClinic`, say the specialty in `name` and `description`, and list the treatments in `availableService`, for example `{"@type": "MedicalTherapy", "name": "[treatment]", "medicineSystem": "https://schema.org/Chiropractic"}`. Never pick a type or a specialty that describes a different practice. `https://schema.org/Musculoskeletal` («disorders of muscles, ligaments and skeletal system», as schema.org defines it) is a real `medicalSpecialty` value: for a clinic that treats those problems it is not a mistake.
+schema.org has no clinic type and no `medicalSpecialty` value named after chiropractic, osteopathy or psychology. `Chiropractic` and `Osteopathic` exist only as `MedicineSystem` values, which describe a medical entity such as a therapy, not the clinic. For these clinics use `MedicalClinic`, say the specialty in `name` and `description`, and list the treatments in `availableService`, for example `{"@type": "MedicalTherapy", "name": "[treatment]", "medicineSystem": "https://schema.org/Chiropractic"}`. Never pick a type or a specialty that describes a different practice. `https://schema.org/Musculoskeletal` («disorders of muscles, ligaments and skeletal system», as schema.org defines it) is a real `medicalSpecialty` value: for a clinic that treats those problems it is not a mistake, so keep `Musculoskeletal` if the site already uses it.
 
 - **Properties.** `name` (spelled as on the sign and the Google Business Profile), `url`, `telephone` in international format, `address` as a `PostalAddress`, `geo`, `openingHoursSpecification`, `logo`, `image`, `medicalSpecialty`, `availableService` (one entry for each treatment that has its own page), `sameAs` (profiles the clinic controls), and `isAcceptingNewPatients` only if the site says it. Google's required properties for a local business are `name` and `address`.
 - **Practitioners.** Each practitioner on the team page is a `Person` with `name`, `jobTitle`, `worksFor` pointing to the clinic's `@id`, `url` to their profile on the site, and `sameAs` to their public entry in a professional register, where one exists.
@@ -331,14 +336,14 @@ Write the report in the user's language, with the headings translated. Start wit
 - [URL] ([status])
 ````
 
-- **Priority.** High: it stops search engines or AI crawlers from reading or indexing important pages, or it gives conflicting or wrong clinic data (name, address, phone, hours or booking link). Medium: missing or wrong clinic schema, a home or service page that never says plainly what the clinic is or does, FAQs that don't answer, no one-tap call or WhatsApp. Low: everything else, llms.txt included. Within a priority, put first what affects more pages.
+- **Priority.** High: it stops search engines or AI crawlers from reading or indexing important pages, or it gives conflicting or wrong clinic data (name, address, phone, hours or booking link). Medium: missing or wrong clinic schema, a home or service page that never says plainly what the clinic is or does, FAQs that don't answer, no one-tap call or WhatsApp, a `Disallow` for `Google-Extended` (the clinic decides). Low: everything else, llms.txt included. Within a priority, put first what affects more pages.
 - **One finding per problem.** If the same problem is on several pages, give all their URLs in one finding.
 - **Short Low findings.** Low findings that need no code go in one short list after the numbered findings, one line each with its URL.
 - **Code with the fix.** A finding about schema always comes with the complete JSON-LD to paste, filled with the clinic's data from the site. Other findings get a snippet when one helps: the robots.txt lines, the head tags, the redirect, the contact links.
 
 ## Rules for the agent
 
-1. **Language.** Answer in the user's language. In Spanish, write neutral Spanish that reads well in Spain and in Latin America: «ustedes» for the plural you, «contestar» for answering a call, «teléfono» for the phone, «horario disponible» for an open appointment slot, and no regional slang.
+1. **Language.** Answer in the user's language. In Spanish, write neutral Spanish that reads well in Spain and in Latin America: «ustedes» for the plural you, «contestar» for answering a call, «teléfono» for the phone, «hora disponible» or «cita disponible» for an open appointment slot, and no regional slang.
 2. **Evidence or nothing.** Every finding names at least one URL on the audited site that you read in this session, and what you saw there. No finding from memory, from an assumption, or about a page you could not read. What needs access you don't have (Search Console, Bing Webmaster Tools, server logs, the Google Business Profile when you can't search the web) goes under «Could not check».
 3. **Pages you cannot read.** If the starting URL fails (an error status, a block or a bot challenge, or HTML with no content that you can't render with JavaScript), say which URL, what happened (the status code, or what the page returned) and that you have no findings for it. If the page loaded but its HTML had no content, say that too, because it is what you saw. Then ask for a URL that works, such as the home page, or for the page's HTML or the site's code. Don't audit another page or site instead without asking. Pages that fail later in the audit go under «Could not check»; a broken link on the site is a finding, with the page that contains the link as evidence.
 4. **No invented numbers.** No statistics about AI engines, search traffic, click-through rates, ranking factors or patient behavior, and no «[n] % of patients search…». Say why something matters with what the engines document (the sources linked in this skill) or as plain practice, without figures. The only numbers in the report are ones you observed on the site.
