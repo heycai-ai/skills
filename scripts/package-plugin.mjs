@@ -1,5 +1,6 @@
-// Packs the Claude plugin archive that the Anthropic directory and OpenAI's "Skills only" upload accept:
-// .claude-plugin/plugin.json, skills/<name>/SKILL.md for each skill, README.md and LICENSE, at the archive root.
+// Packs the plugin archive that the Anthropic directory and OpenAI's "Skills only" upload accept, at the archive root:
+// .claude-plugin/plugin.json, the Agent Plugins plugin.json (OpenAI reads the package identity and listing fields from
+// its extensions["com.openai"]), skills/<name>/SKILL.md for each skill, README.md and LICENSE.
 // Written with Node built-ins only, and deterministic: the same files always give the same bytes.
 
 import fs from 'node:fs';
@@ -112,7 +113,7 @@ export function readZip(zip) {
   return entries;
 }
 
-// The archive entries, read from root: the Claude manifest, every skill under skills/ (sorted), README.md, LICENSE.
+// The archive entries, read from root: both manifests, every skill under skills/ (sorted), README.md, LICENSE.
 export function packageEntries(root) {
   const read = (name) => {
     const file = path.join(root, name);
@@ -120,7 +121,7 @@ export function packageEntries(root) {
     return { name, data: fs.readFileSync(file) };
   };
   const skills = buildIndex(path.join(root, 'skills')).files.map(({ path: file, content }) => ({ name: `skills/${file}`, data: content }));
-  return [read('.claude-plugin/plugin.json'), ...skills, read('README.md'), read('LICENSE')];
+  return [read('.claude-plugin/plugin.json'), read('plugin.json'), ...skills, read('README.md'), read('LICENSE')];
 }
 
 // Writes the archive for the plugin at root to outFile and returns the entry names.

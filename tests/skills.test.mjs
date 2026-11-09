@@ -106,6 +106,8 @@ test('README keeps the skills CLI install and adds one per platform: Claude Code
     '### Hermes Agent',
     'hermes plugins install heycai-ai/skills',
     'hermes plugins enable heycai-clinic-skills',
+    'answer N to the Node dependencies prompt',
+    'In Codex or Work mode in the ChatGPT desktop app, the marketplace also shows up as a source in the Plugins Directory.',
   ]) {
     assert.ok(install.includes(needle), `README Install is missing: ${needle}`);
   }

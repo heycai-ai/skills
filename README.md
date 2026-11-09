@@ -46,7 +46,7 @@ codex plugin marketplace add heycai-ai/skills
 codex plugin add heycai-clinic-skills@heycai
 ```
 
-The marketplace also shows up as a source in the Plugins Directory of the ChatGPT desktop app.
+In Codex or Work mode in the ChatGPT desktop app, the marketplace also shows up as a source in the Plugins Directory.
 
 ### Cursor
 
@@ -68,6 +68,8 @@ gemini extensions install https://github.com/heycai-ai/skills
 hermes plugins install heycai-ai/skills --no-enable
 hermes plugins enable heycai-clinic-skills
 ```
+
+When the install says the plugin declares Node dependencies, answer N to the Node dependencies prompt: the plugin has none, and its `package.json` only holds the dev tooling for this repository's tests.
 
 ## Skills
 

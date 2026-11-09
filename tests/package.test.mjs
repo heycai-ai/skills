@@ -10,9 +10,11 @@ import { createZip, packageEntries, readZip, writePackage, ZIP_NAME } from '../s
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPTS_DIR = path.join(ROOT, 'scripts');
 
-// What the Claude directory and OpenAI's "Skills only" upload read from a Claude plugin archive, and nothing else.
+// What the Claude directory and OpenAI's "Skills only" upload read from a plugin archive, and nothing else. OpenAI
+// takes the package identity and listing fields from the root Agent Plugins plugin.json (extensions["com.openai"]).
 const EXPECTED_ENTRIES = [
   '.claude-plugin/plugin.json',
+  'plugin.json',
   'skills/clinic-front-desk-audit/SKILL.md',
   'skills/clinic-website-ai-search/SKILL.md',
   'README.md',
@@ -57,7 +59,7 @@ test('readZip rejects an entry whose bytes do not match its CRC-32', () => {
   assert.throws(() => readZip(corrupt), /CRC|invalid|inflate|incorrect/i);
 });
 
-test('packageEntries lists the Claude manifest, each skill, the README and the LICENSE, in that order', () => {
+test('packageEntries lists the Claude manifest, the Agent Plugins manifest, each skill, the README and the LICENSE, in that order', () => {
   assert.deepEqual(packageEntries(ROOT).map((e) => e.name), EXPECTED_ENTRIES);
 });
 
@@ -73,6 +75,26 @@ test('writePackage writes exactly the expected entries with the bytes of the rep
   }
   const manifest = JSON.parse(entries[0].data.toString('utf8'));
   assert.ok(manifest.description.length > 0, 'OpenAI requires a nonempty description');
+  const portable = JSON.parse(entries[1].data.toString('utf8'));
+  assert.equal(portable.extensions['com.openai'].interface.developerName, 'HeyCAi', 'the OpenAI listing block travels in the zip');
+});
+
+// Today every skill is a single SKILL.md. If a skill gains references/, scripts/ or assets/, this fails until the
+// packager ships them too, instead of the zip silently dropping them.
+test('every file under skills/ is in the archive', (t) => {
+  const out = path.join(tmp(t, 'heycai-package-'), ZIP_NAME);
+  writePackage(ROOT, out);
+  const zipped = new Set(readZip(fs.readFileSync(out)).map((e) => e.name));
+  const OS_JUNK = new Set(['.DS_Store', 'Thumbs.db', 'desktop.ini']);
+  const walk = (dir) =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return walk(full);
+      return OS_JUNK.has(entry.name) ? [] : [path.relative(ROOT, full).split(path.sep).join('/')];
+    });
+  const files = walk(path.join(ROOT, 'skills'));
+  assert.ok(files.length >= 2);
+  for (const file of files) assert.ok(zipped.has(file), `${file} is not in the archive`);
 });
 
 test('the archive holds no directories, dot-files other than the manifest, or OS junk', (t) => {
@@ -88,7 +110,7 @@ test('the archive holds no directories, dot-files other than the manifest, or OS
 test('running the package script writes dist/heycai-clinic-skills.zip next to its skills folder', (t) => {
   const root = tmp(t, 'heycai skills package-');
   fs.cpSync(SCRIPTS_DIR, path.join(root, 'scripts'), { recursive: true });
-  for (const file of ['package.json', 'README.md', 'LICENSE']) fs.copyFileSync(path.join(ROOT, file), path.join(root, file));
+  for (const file of ['package.json', 'plugin.json', 'README.md', 'LICENSE']) fs.copyFileSync(path.join(ROOT, file), path.join(root, file));
   fs.cpSync(path.join(ROOT, '.claude-plugin'), path.join(root, '.claude-plugin'), { recursive: true });
   fs.mkdirSync(path.join(root, 'skills', 'demo-skill'), { recursive: true });
   fs.writeFileSync(
@@ -98,9 +120,9 @@ test('running the package script writes dist/heycai-clinic-skills.zip next to it
 
   const output = execFileSync(process.execPath, [path.join(root, 'scripts', 'package-plugin.mjs')], { encoding: 'utf8' });
 
-  assert.match(output, /Wrote dist\/heycai-clinic-skills\.zip with 4 file\(s\)/);
+  assert.match(output, /Wrote dist\/heycai-clinic-skills\.zip with 5 file\(s\)/);
   const entries = readZip(fs.readFileSync(path.join(root, 'dist', ZIP_NAME)));
-  assert.deepEqual(entries.map((e) => e.name), ['.claude-plugin/plugin.json', 'skills/demo-skill/SKILL.md', 'README.md', 'LICENSE']);
+  assert.deepEqual(entries.map((e) => e.name), ['.claude-plugin/plugin.json', 'plugin.json', 'skills/demo-skill/SKILL.md', 'README.md', 'LICENSE']);
 });
 
 test('writePackage fails loudly when a required file is missing', (t) => {
