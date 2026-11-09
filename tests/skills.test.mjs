@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { ENTITY_EN, ENTITY_ES, parseSkill, leadOf, ruleViolations } from '../scripts/skill-lib.mjs';
 
 // Every skill this repo publishes. Adding a skill means adding its folder name here.
-const EXPECTED_SKILLS = ['clinic-front-desk-audit'];
+const EXPECTED_SKILLS = ['clinic-front-desk-audit', 'clinic-website-ai-search'];
 
 const SKILLS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'skills');
 
