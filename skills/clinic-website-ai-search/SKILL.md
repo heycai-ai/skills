@@ -57,19 +57,20 @@ Google says that to be shown as a supporting link in AI Overviews or AI Mode, a 
 
 ### 2. AI crawlers: robots.txt and llms.txt
 
-These are the crawlers each engine documents. The second column is what the site must not block to be found and cited; the third is a separate control.
+These are the crawlers each engine documents. The second column is the crawler that decides whether the site can be found and cited, so the site must not block it; the third is a separate control.
 
-| Engine | Crawler that finds pages for answers | Separate control |
+| Engine | Crawler that decides whether the site appears | Separate control |
 | --- | --- | --- |
-| ChatGPT search | `OAI-SearchBot`; `ChatGPT-User` fetches a page when a user asks | `GPTBot`: training of OpenAI's models |
-| Claude | `Claude-SearchBot`; `Claude-User` fetches a page when a user asks | `ClaudeBot`: training of Anthropic's models |
-| Perplexity | `PerplexityBot`; `Perplexity-User` fetches a page when a user asks | None: Perplexity says PerplexityBot is not used to crawl content for AI foundation models |
+| ChatGPT search | `OAI-SearchBot` | `GPTBot`: training of OpenAI's models |
+| Claude | `Claude-SearchBot` | `ClaudeBot`: training of Anthropic's models |
+| Perplexity | `PerplexityBot` | None: Perplexity says PerplexityBot is not used to crawl content for AI foundation models |
 | Google Search, AI Overviews and AI Mode | `Googlebot` | `Google-Extended`: training of Gemini models and grounding in Gemini Apps and Vertex AI; Google says it does not affect inclusion or ranking in Google Search |
 | Microsoft Copilot | `bingbot` | — |
 
 Sources: OpenAI https://developers.openai.com/api/docs/bots · Anthropic https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler · Perplexity https://docs.perplexity.ai/docs/resources/perplexity-crawlers · Google https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers · Microsoft https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a
 
 - **No accidental block.** None of the crawlers in the second column is disallowed, by name or through `User-agent: *` with `Disallow: /` (a common leftover from a staging site).
+- **Fetchers that act for a user.** `ChatGPT-User`, `Claude-User` and `Perplexity-User` fetch a page when a person asks about it; they don't decide whether the site appears. OpenAI says robots.txt rules "may not apply" to ChatGPT-User and that it "is not used to determine whether content may appear in Search"; Perplexity says Perplexity-User "generally ignores robots.txt rules", so a `Disallow` for these two is advisory at most. Anthropic says Claude-User does follow robots.txt and that disabling it "may reduce your site's visibility for user-directed web search", so don't disallow `Claude-User` either.
 - **Named groups repeat the rules.** A crawler that finds a group with its own name follows that group only. Google says groups for a specific user agent and the `*` group "are not combined" (https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec), and Anthropic says that when robots.txt names ClaudeBot it follows that rule "even if your general setting says something different". So every named group must repeat each `Disallow` it needs, such as an admin area.
 - **Training is the clinic's decision.** Disallowing `GPTBot`, `ClaudeBot` or `Google-Extended` is a choice about model training (and, for `Google-Extended`, about grounding in Gemini Apps); it does not remove the site from ChatGPT search, Claude or Google Search. Explain this and leave those lines as the clinic wants them.
 - **Blocks outside robots.txt.** A firewall, CDN or hosting setting that blocks bots can turn these crawlers away even when robots.txt allows them; Google's AI features page lists "Ensuring that crawling is allowed in robots.txt, and by any CDN or hosting infrastructure" among its best practices. If your own requests get a 403 or a challenge page, report that you could not read the page, not that crawlers are blocked, and tell the developer to check the bot settings and the server logs for the user agents above.
@@ -84,12 +85,11 @@ Disallow: /[private path]/
 
 # These crawlers have their own group, so the private path is repeated here.
 # Training crawlers (GPTBot, ClaudeBot, Google-Extended) follow the * group unless the clinic adds a group for them.
+# ChatGPT-User and Perplexity-User act for a user and may ignore robots.txt, so they are not listed.
 User-agent: OAI-SearchBot
-User-agent: ChatGPT-User
 User-agent: Claude-SearchBot
 User-agent: Claude-User
 User-agent: PerplexityBot
-User-agent: Perplexity-User
 Disallow: /[private path]/
 
 Sitemap: https://[clinic domain]/sitemap.xml
@@ -112,7 +112,7 @@ An llms.txt built only from what the pages say:
 
 ### 3. Clinic schema (JSON-LD)
 
-- **One clinic node, in the HTML.** The home page and the contact page have a `<script type="application/ld+json">` that describes the clinic, served in the HTML rather than only injected by JavaScript or a tag manager. Each location page describes its own location. Give the clinic a stable `@id` (for example `https://[clinic domain]/#clinic`) and the same data under that `@id` on every page.
+- **One clinic node, in the HTML.** The home page and the contact page have a `<script type="application/ld+json">` that describes the clinic, served in the HTML rather than only injected by JavaScript or a tag manager. Each location page describes its own location. Give the clinic a stable `@id` (for example `https://[clinic domain]/#clinic`) and never different data under that `@id` on different pages. An `@id` only links nodes on the same page; repeat `@type` and `name` for nodes defined on other pages, and never replace inline data that is already there with a bare `@id`.
 - **The right type.** Google asks for "the most specific LocalBusiness sub-type possible" (https://developers.google.com/search/docs/appearance/structured-data/local-business). Start from `MedicalClinic`: on schema.org it is the clinic type that has both `medicalSpecialty` and `availableService`. Where schema.org also has a business type for the specialty, add it as a second type, for example `"@type": ["MedicalClinic", "Dentist"]`.
 
 | Clinic | `medicalSpecialty` | Business type to add next to `MedicalClinic` |
@@ -130,7 +130,7 @@ An llms.txt built only from what the pages say:
 | Speech therapy | `https://schema.org/SpeechPathology` | None |
 | Chiropractic, osteopathy, psychology, aesthetics | None | None |
 
-schema.org has no clinic type and no `medicalSpecialty` value for chiropractic, osteopathy or psychology. `Chiropractic` and `Osteopathic` exist only as `MedicineSystem` values, which describe a medical entity such as a therapy, not the clinic. For these clinics use `MedicalClinic`, say the specialty in `name` and `description`, and list the treatments in `availableService`, for example `{"@type": "MedicalTherapy", "name": "[treatment]", "medicineSystem": "https://schema.org/Chiropractic"}`. Never pick a type or a specialty that describes a different practice.
+schema.org has no clinic type and no `medicalSpecialty` value named after chiropractic, osteopathy or psychology. `Chiropractic` and `Osteopathic` exist only as `MedicineSystem` values, which describe a medical entity such as a therapy, not the clinic. For these clinics use `MedicalClinic`, say the specialty in `name` and `description`, and list the treatments in `availableService`, for example `{"@type": "MedicalTherapy", "name": "[treatment]", "medicineSystem": "https://schema.org/Chiropractic"}`. Never pick a type or a specialty that describes a different practice. `https://schema.org/Musculoskeletal` («disorders of muscles, ligaments and skeletal system», as schema.org defines it) is a real `medicalSpecialty` value: for a clinic that treats those problems it is not a mistake.
 
 - **Properties.** `name` (spelled as on the sign and the Google Business Profile), `url`, `telephone` in international format, `address` as a `PostalAddress`, `geo`, `openingHoursSpecification`, `logo`, `image`, `medicalSpecialty`, `availableService` (one entry for each treatment that has its own page), `sameAs` (profiles the clinic controls), and `isAcceptingNewPatients` only if the site says it. Google's required properties for a local business are `name` and `address`.
 - **Practitioners.** Each practitioner on the team page is a `Person` with `name`, `jobTitle`, `worksFor` pointing to the clinic's `@id`, `url` to their profile on the site, and `sameAs` to their public entry in a professional register, where one exists.
@@ -241,7 +241,7 @@ FAQ markup, only for questions and answers shown on the same page:
 - **Health content with a name and a date.** Articles about conditions and treatments show the author's name and profession, link to the author's profile, say when they were published and last reviewed, and cite their sources. Google asks whether pages "carry a byline, where one might be expected", gives even more weight to content with strong E-E-A-T on topics that can affect people's health, and calls made-up author profiles a form of deception (https://developers.google.com/search/docs/fundamentals/creating-helpful-content). Flag what is missing, and suggest that a professional at the clinic reviews the text.
 - **Text, not pictures of text.** Hours, prices, timetables and comparisons are HTML text, lists or tables, not only images or PDFs; Google's AI features page asks for important content to be "available in textual form".
 
-Markup for an article written by one of the clinic's professionals:
+Markup for an article written by one of the clinic's professionals. The author and the clinic are defined on other pages, so they appear here again with their `@type` and `name`; use the same `@type` for the clinic as on the home page.
 
 ```json
 {
@@ -264,6 +264,19 @@ Markup for an article written by one of the clinic's professionals:
       "publisher": { "@id": "https://[clinic domain]/#clinic" },
       "datePublished": "[YYYY-MM-DD]",
       "dateModified": "[YYYY-MM-DD]"
+    },
+    {
+      "@type": "Person",
+      "@id": "https://[clinic domain]/[team page]#[practitioner]",
+      "name": "[full name]",
+      "jobTitle": "[profession, as on the team page]",
+      "url": "https://[clinic domain]/[team page]"
+    },
+    {
+      "@type": "MedicalClinic",
+      "@id": "https://[clinic domain]/#clinic",
+      "name": "[Clinic name, spelled as on the sign]",
+      "url": "https://[clinic domain]/"
     }
   ]
 }
@@ -272,7 +285,7 @@ Markup for an article written by one of the clinic's professionals:
 ### 6. The same clinic data everywhere
 
 - **One fact sheet.** From the pages you read, write down the clinic's name, address, phone, WhatsApp number, hours, specialties, practitioners and their professions, the year it opened, any figures it gives, its prices if it publishes them, and its booking link. Every page, the JSON-LD and the llms.txt must give the same values.
-- **Conflicts.** A value that differs between two places is a High finding with both URLs: a patient or an engine that reads both can't tell which one is right.
+- **Conflicts.** A name, address, phone, opening hours or booking link that differs between two places is a High finding with both URLs: a patient or an engine that reads both can't tell which one is right. Other conflicting figures, such as the year the clinic opened or a patient count, are Medium or Low.
 - **Copies with old data.** Ask the user which old domains, staging or preview hosts, and landing-page subdomains exist, and check the ones you can reach. If they are public and show old data, redirect them (301 or 308) to the matching page of the main site, or mark them `noindex`.
 - **Profiles outside the site.** Social profiles and directory listings that the clinic controls give the same name, address, phone and hours, link to the site, and are listed in `sameAs`. If you can search the web, check the main ones; if not, put them under «Could not check».
 - **A name shared with another business.** Write the clinic's full name with its city everywhere, add a `disambiguatingDescription` to the clinic node, and make sure `sameAs` lists only this clinic's profiles, never those of a business with a similar name.
@@ -318,8 +331,9 @@ Write the report in the user's language, with the headings translated. Start wit
 - [URL] ([status])
 ````
 
-- **Priority.** High: it stops search engines or AI crawlers from reading or indexing important pages, or it gives conflicting or wrong clinic data (name, address, phone, hours). Medium: missing or wrong clinic schema, a home or service page that never says plainly what the clinic is or does, FAQs that don't answer, no one-tap call or WhatsApp. Low: everything else, llms.txt included. Within a priority, put first what affects more pages.
+- **Priority.** High: it stops search engines or AI crawlers from reading or indexing important pages, or it gives conflicting or wrong clinic data (name, address, phone, hours or booking link). Medium: missing or wrong clinic schema, a home or service page that never says plainly what the clinic is or does, FAQs that don't answer, no one-tap call or WhatsApp. Low: everything else, llms.txt included. Within a priority, put first what affects more pages.
 - **One finding per problem.** If the same problem is on several pages, give all their URLs in one finding.
+- **Short Low findings.** Low findings that need no code go in one short list after the numbered findings, one line each with its URL.
 - **Code with the fix.** A finding about schema always comes with the complete JSON-LD to paste, filled with the clinic's data from the site. Other findings get a snippet when one helps: the robots.txt lines, the head tags, the redirect, the contact links.
 
 ## Rules for the agent
