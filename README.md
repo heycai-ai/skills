@@ -69,8 +69,6 @@ hermes plugins install heycai-ai/skills --no-enable
 hermes plugins enable heycai-clinic-skills
 ```
 
-When the install says the plugin declares Node dependencies, answer N to the Node dependencies prompt: the plugin has none, and its `package.json` only holds the dev tooling for this repository's tests.
-
 ## Skills
 
 | Skill | For | What it does |
@@ -82,7 +80,7 @@ Once a skill is installed, ask your agent in your own words, for example «how m
 
 ## Privacy and support
 
-The skills are plain instructions in `SKILL.md` files. They bundle no scripts or MCP servers, ask for no credentials and send nothing to HeyCAi. The front-desk audit works only from the numbers you give your agent. The website audit asks your agent to read the clinic's public pages with its own tools. Neither skill needs patient data, so don't paste any into the chat.
+The skills are plain instructions in `SKILL.md` files. They bundle no scripts or MCP servers, ask for no credentials and send nothing to HeyCAi. The front-desk audit works only from the numbers you give your agent. The website audit asks your agent to read the clinic's public pages with its own tools. Neither skill needs patient data, so don't paste any into the chat. Maintainers build and test this repository with private tooling; the plugin itself is only the files you see here.
 
 - Privacy policy: https://www.heycai.ai/privacy
 - Terms: https://www.heycai.ai/terms
