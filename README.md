@@ -78,9 +78,50 @@ hermes plugins enable heycai-clinic-skills
 
 Once a skill is installed, ask your agent in your own words, for example «how much does this clinic lose to missed calls?» or «¿por qué mi clínica no aparece en ChatGPT?».
 
+## MCP server
+
+HeyCAi also runs a public MCP server, HeyCAi Clinic Tools, at `https://www.heycai.ai/mcp`. It gives the assistant the same audits as tools: a front-desk loss calculator, a website AI-search check and facts about HeyCAi. It uses Streamable HTTP and needs no account or key. The plugin's `mcp.json` points to it for agents that read MCP servers from the Agent Plugins format; Claude Code and the skills CLI install only the skills. How to connect it from each assistant: https://www.heycai.ai/mcp-server
+
+Claude Code:
+
+```sh
+claude mcp add --transport http heycai-clinic-tools https://www.heycai.ai/mcp
+```
+
+Codex:
+
+```sh
+codex mcp add heycai-clinic-tools --url https://www.heycai.ai/mcp
+```
+
+Cursor, in `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "heycai-clinic-tools": {
+      "url": "https://www.heycai.ai/mcp"
+    }
+  }
+}
+```
+
+VS Code, in `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "heycai-clinic-tools": {
+      "type": "http",
+      "url": "https://www.heycai.ai/mcp"
+    }
+  }
+}
+```
+
 ## Privacy and support
 
-The skills are plain instructions in `SKILL.md` files. They bundle no scripts or MCP servers, ask for no credentials and send nothing to HeyCAi. The front-desk audit works only from the numbers you give your agent. The website audit asks your agent to read the clinic's public pages with its own tools. Neither skill needs patient data, so don't paste any into the chat. Maintainers build and test this repository with private tooling; the plugin itself is only the files you see here.
+The skills are plain instructions in `SKILL.md` files. They bundle no scripts and ask for no credentials. The plugin's `mcp.json` points to HeyCAi's public MCP server, https://www.heycai.ai/mcp, which needs no account and stores nothing it is sent; the skills themselves send nothing to HeyCAi. The front-desk audit works only from the numbers you give your agent. The website audit asks your agent to read the clinic's public pages with its own tools. Neither skill needs patient data, so don't paste any into the chat. Maintainers build and test this repository with private tooling; the plugin itself is only the files you see here.
 
 - Privacy policy: https://www.heycai.ai/privacy
 - Terms: https://www.heycai.ai/terms

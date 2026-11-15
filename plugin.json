@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "heycai-clinic-skills",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Two skills for people who work with health clinics: audit what a clinic's front desk loses to missed calls, WhatsApp and no-shows, and audit a clinic website for Google and AI search. By HeyCAi, the AI receptionist for health clinics.",
   "author": {
     "name": "HeyCAi",
@@ -30,7 +30,7 @@
       "interface": {
         "displayName": "HeyCAi Clinic Skills",
         "shortDescription": "Front desk and website audits",
-        "longDescription": "Two skills for agencies, consultants, web developers, clinic owners and practice managers who work with health clinics of any specialty, in English and Spanish.\n\nClinic front desk audit: estimates how much revenue a clinic loses each month to unanswered calls, WhatsApp messages answered late or not at all, and no-shows, using only the numbers the clinic gives. It ranks what to fix or automate first and lists the options to close the gap: process fixes, more staff, an answering service or an AI receptionist.\n\nClinic website audit for Google and AI search: reviews a clinic's public website and fixes what keeps it from ranking on Google and from being cited by AI search engines: crawling and indexing, AI crawlers, llms.txt, schema.org JSON-LD, local SEO, quotable answers and one-tap contact. Every finding cites a page of the site and comes with the fix and the code.\n\nLimits: the skills are instructions only. They don't connect to the clinic's phones, calendar or practice software, and they need no patient data. The estimates are only as good as the numbers provided. The website audit reads public pages only; anything that needs other access goes on a list for the clinic.\n\nBy HeyCAi, the AI receptionist for health clinics.",
+        "longDescription": "Two skills for agencies, consultants, web developers, clinic owners and practice managers who work with health clinics of any specialty, in English and Spanish.\n\nClinic front desk audit: estimates how much revenue a clinic loses each month to unanswered calls, WhatsApp messages answered late or not at all, and no-shows, using only the numbers the clinic gives. It ranks what to fix or automate first and lists the options to close the gap: process fixes, more staff, an answering service or an AI receptionist.\n\nClinic website audit for Google and AI search: reviews a clinic's public website and fixes what keeps it from ranking on Google and from being cited by AI search engines: crawling and indexing, AI crawlers, llms.txt, schema.org JSON-LD, local SEO, quotable answers and one-tap contact. Every finding cites a page of the site and comes with the fix and the code.\n\nLimits: the skills are instructions only. They don't connect to the clinic's phones, calendar or practice software, and they need no patient data. The estimates are only as good as the numbers provided. The website audit reads public pages only; anything that needs other access goes on a list for the clinic.\n\nWith the MCP connection, the assistant can also run the same audits as tools on HeyCAi's public MCP server (https://www.heycai.ai/mcp): a front-desk loss calculator, a website AI-search check and facts about HeyCAi. The tools need no account and store nothing they are sent.\n\nBy HeyCAi, the AI receptionist for health clinics.",
         "developerName": "HeyCAi",
         "category": "Productivity",
         "websiteURL": "https://www.heycai.ai",
@@ -42,7 +42,59 @@
           "Audit this clinic's website for Google and AI search and give me the fixes.",
           "¿Por qué mi clínica no aparece en ChatGPT?"
         ],
-        "brandColor": "#2D7D6F"
+        "brandColor": "#2D7D6F",
+        "composerIcon": "./.claude-plugin/icon.png",
+        "logo": "./.claude-plugin/icon.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Front-desk loss from unanswered calls",
+              "prompt": "A physiotherapy clinic gets 35 calls a day and misses 30%. 40% of calls are from new patients, half of the new patients it misses never book, it takes calls 22 days a month and a new patient is worth €270. How much does it lose a month?",
+              "tools_triggered": "estimate_front_desk_loss",
+              "expected_behavior": "€12,474 a month gross, with the repeat-call adjustment and the capacity check pending"
+            },
+            {
+              "description": "Website check for AI search",
+              "prompt": "Is https://www.heycai.ai ready for AI search engines? Which AI crawlers can read it?",
+              "tools_triggered": "check_clinic_website_ai_readiness",
+              "expected_behavior": "structured findings with the robots.txt access of the seven AI crawlers"
+            },
+            {
+              "description": "Practice software HeyCAi books into",
+              "prompt": "What practice software does HeyCAi book into?",
+              "tools_triggered": "about_heycai",
+              "expected_behavior": "PracticeHub and QuiroHiro directly, and other calendars such as Cliniko, Jane App or Google Calendar, from HeyCAi's facts, with no prices"
+            },
+            {
+              "description": "No-show loss, asked in Spanish",
+              "prompt": "Una clínica dental tiene 200 citas al mes, un 5 % de ausencias, cobra 45 € por visita y vuelve a ocupar el 20 % de esas horas. ¿Cuánto pierde al mes?",
+              "tools_triggered": "estimate_front_desk_loss",
+              "expected_behavior": "360 € al mes por ausencias; las demás fugas, pendientes"
+            },
+            {
+              "description": "About HeyCAi, in Spanish",
+              "prompt": "¿Qué es HeyCAi? Respóndeme en español.",
+              "tools_triggered": "about_heycai",
+              "expected_behavior": "the Spanish summary and links to /es/precios, /es/demo and /es/contacto"
+            }
+          ],
+          "negative": [
+            {
+              "description": "Booking an appointment: no tool is called",
+              "prompt": "Book me a dentist appointment for tomorrow at 10."
+            },
+            {
+              "description": "A diagnosis from patient notes: no tool is called",
+              "prompt": "Here are my patient's notes: what is the diagnosis?"
+            },
+            {
+              "description": "An unrelated question: no tool is called",
+              "prompt": "What's the weather in Madrid today?"
+            }
+          ]
+        }
       }
     }
   }
